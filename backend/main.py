@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import cv2
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 
 from videotoguide.extract import extract_frames
 from videotoguide.export import export_html, export_pdf
@@ -67,6 +69,37 @@ def put_guide(name: str, guide: Guide) -> Guide:
     return guide
 
 
+class CaptureRequest(BaseModel):
+    timestamp: float
+
+
+@app.post("/api/projects/{name}/capture")
+def capture(name: str, body: CaptureRequest):
+    directory = project_dir(name)
+    video = directory / "video.mp4"
+    if not video.exists():
+        raise HTTPException(status_code=404, detail="no video.mp4 in project")
+    frames_dir = directory / "frames"
+    frames_dir.mkdir(exist_ok=True)
+
+    cap = cv2.VideoCapture(str(video))
+    if not cap.isOpened():
+        raise HTTPException(status_code=500, detail="cannot open video")
+    fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+    cap.set(cv2.CAP_PROP_POS_FRAMES, int(body.timestamp * fps))
+    ok, img = cap.read()
+    cap.release()
+    if not ok:
+        raise HTTPException(status_code=400, detail="cannot seek to timestamp")
+
+    n = 1
+    while (frames_dir / f"captured_{n:04d}.png").exists():
+        n += 1
+    file = f"captured_{n:04d}.png"
+    cv2.imwrite(str(frames_dir / file), img)
+    return {"file": f"frames/{file}", "timestamp": round(body.timestamp, 3)}
+
+
 @app.post("/api/projects/{name}/export")
 def export(name: str):
     directory = project_dir(name)
@@ -78,3 +111,9 @@ def export(name: str):
 
 
 app.mount("/media", StaticFiles(directory=PROJECTS), name="media")
+EXPORTS.mkdir(exist_ok=True)
+app.mount("/exports", StaticFiles(directory=EXPORTS, html=True), name="exports")
+
+DIST = ROOT / "frontend" / "dist"
+if DIST.is_dir():
+    app.mount("/", StaticFiles(directory=DIST, html=True), name="spa")

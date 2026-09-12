@@ -39,11 +39,26 @@ open exports/demo/guide.html
 `vtg extract` accepts a video file or a project directory (uses
 `video.mp4` inside it).
 
-## Run the API
+## Run the app
+
+Build the frontend once, then serve everything from FastAPI:
 
 ```bash
-uv run uvicorn backend.main:app --reload
+cd frontend && npm install && npm run build && cd ..
+uv run uvicorn backend.main:app
 ```
+
+Open http://127.0.0.1:8000, pick a project, scrub the video, capture frames
+into the guide, then Export.
+
+For frontend development with hot reload:
+
+```bash
+uv run uvicorn backend.main:app
+cd frontend && npm run dev
+```
+
+The Vite dev server proxies `/api`, `/media`, and `/exports` to the backend.
 
 ## Status
 
