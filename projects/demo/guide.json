@@ -1,0 +1,47 @@
+{
+  "title": "Demo guide: turning a video into steps",
+  "sections": [
+    {
+      "id": "sec-1",
+      "title": "Getting started",
+      "steps": [
+        {
+          "id": "step-1",
+          "timestamp": 0.36,
+          "frame": "frames/frame_0001.png",
+          "instruction": "Start from the main panel. The layout is created with `drawbox` filters.",
+          "annotations": [
+            { "type": "box", "x": 90, "y": 110, "w": 440, "h": 300 },
+            { "type": "text", "x": 90, "y": 85, "text": "The main panel" }
+          ]
+        },
+        {
+          "id": "step-2",
+          "timestamp": 6.36,
+          "frame": "frames/frame_0002.png",
+          "instruction": "The output area sits on the right and holds the result.",
+          "annotations": [
+            { "type": "box", "x": 630, "y": 290, "w": 540, "h": 400 },
+            { "type": "text", "x": 630, "y": 265, "text": "Output area" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sec-2",
+      "title": "Finishing up",
+      "steps": [
+        {
+          "id": "step-3",
+          "timestamp": 12.36,
+          "frame": "frames/frame_0003.png",
+          "instruction": "The summary panel lists everything. Run `vtg export` to render it.",
+          "annotations": [
+            { "type": "box", "x": 190, "y": 190, "w": 900, "h": 420 },
+            { "type": "text", "x": 190, "y": 165, "text": "Summary panel" }
+          ]
+        }
+      ]
+    }
+  ]
+}
