@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { mediaUrl } from "./api.js";
 
 const COLORS = ["#e53e3e", "#2b6cb0", "#2f855a", "#d69e2e", "#1a202c"];
 const TOOLS = [
@@ -21,16 +22,18 @@ export default function Annotator({ project, guide, secIndex, stepIndex, onSave,
   const [textValue, setTextValue] = useState("");
   const [, setLoaded] = useState(false);
 
-  const frameFile = step ? step.frame.split("/").pop() : "";
+  const frameFile = step?.frame || "";
 
   useEffect(() => {
     if (!step) return;
     const img = new Image();
+    imgRef.current = null;
     img.onload = () => {
       imgRef.current = img;
       setLoaded((v) => !v);
     };
-    img.src = `/media/${project}/frames/${frameFile}`;
+    img.src = mediaUrl(project, frameFile);
+    return () => { img.onload = null; };
   }, [project, frameFile]);
 
   function draw() {

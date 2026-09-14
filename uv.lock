@@ -996,6 +996,11 @@ transcribe = [
     { name = "faster-whisper" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "httpx" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "fastapi", specifier = ">=0.115" },
@@ -1009,3 +1014,6 @@ requires-dist = [
     { name = "uvicorn", specifier = ">=0.32" },
 ]
 provides-extras = ["transcribe"]
+
+[package.metadata.requires-dev]
+dev = [{ name = "httpx", specifier = ">=0.28" }]

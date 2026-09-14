@@ -39,6 +39,12 @@ open exports/demo/guide.html
 `vtg extract` accepts a video file or a project directory (uses
 `video.mp4` inside it).
 
+Exports use a dedicated output directory, separate from the source project.
+Each successful export replaces that directory, including its images, so removed
+steps do not leave old screenshots behind. If HTML or PDF generation fails, the
+previous export stays intact. Frame paths in `guide.json` must stay inside the
+project's `frames/` directory.
+
 ## Run the app
 
 Build the frontend once, then serve everything from FastAPI:
@@ -60,6 +66,9 @@ cd frontend && npm run dev
 
 The Vite dev server proxies `/api`, `/media`, and `/exports` to the backend.
 
+Edits save in order. The editor displays failed saves and provides a retry button;
+project switching waits for successful saves. Export waits for pending edits too.
+
 ## Suggested text from narration (optional)
 
 ```bash
@@ -74,11 +83,36 @@ downloads on first use and the transcript caches to
 suggestion on the earlier step — accept it or ignore it. Steps always stay
 human-editable.
 
+## Tests
+
+Backend regression tests use the standard-library test runner. `uv sync` installs
+the development HTTP client needed by FastAPI's test client.
+
+```bash
+export UV_PROJECT_ENVIRONMENT="$HOME/.venvs/video-to-guide"
+uv sync
+uv run python -m unittest discover -s tests -v
+```
+
+Frontend tests need Node.js 22.12 or newer:
+
+```bash
+cd frontend
+npm install
+npm test
+npm run build
+```
+
+The tests cover project switching, save ordering and retry, capture readiness,
+suggestion acceptance, frame selection, path validation, redaction isolation,
+and export replacement. PDF failure tests mock Chrome; actual PDF export still
+requires an installed Chromium browser.
+
 ## Status
 
-Early scaffold. Frame extraction and HTML/PDF export work end to end via the
-CLI; the web UI (frame picking, annotation, section organizing) is not built
-yet. See `video-to-guide-app-spec.md` for the plan.
+The CLI and web UI support frame capture, annotation, section organizing, local
+transcription suggestions, and HTML/PDF export. See `video-to-guide-app-spec.md`
+for the remaining plans.
 
 ## Acknowledgments
 
@@ -95,4 +129,3 @@ yet. See `video-to-guide-app-spec.md` for the plan.
 ## License
 
 [MIT](LICENSE)
-

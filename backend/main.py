@@ -1,21 +1,31 @@
 from __future__ import annotations
 
+import json
+import subprocess
+from functools import lru_cache
 from pathlib import Path
+from threading import Lock
+from uuid import uuid4
 
 import cv2
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from videotoguide.extract import extract_frames
-from videotoguide.export import export_html, export_pdf
-from videotoguide.model import Guide, load_guide, save_guide
+from videotoguide.export import export_guide
+from videotoguide.model import Guide, load_guide, resolve_frame, save_guide
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECTS = ROOT / "projects"
 EXPORTS = ROOT / "exports"
 
 app = FastAPI(title="video-to-guide")
+
+
+@lru_cache(maxsize=None)
+def project_lock(name: str):
+    return Lock()
 
 
 def project_dir(name: str) -> Path:
@@ -35,7 +45,11 @@ def list_projects() -> list[str]:
 
 
 @app.post("/api/projects/{name}/extract")
-def extract(name: str, threshold: float = 27.0, max_frames: int = 40):
+def extract(
+    name: str,
+    threshold: float = Query(27.0, gt=0),
+    max_frames: int = Query(40, ge=1),
+):
     directory = project_dir(name)
     video = directory / "video.mp4"
     if not video.exists():
@@ -50,7 +64,7 @@ def frames(name: str):
     manifest = directory / "frames" / "manifest.json"
     if not manifest.exists():
         raise HTTPException(status_code=404, detail="not extracted yet")
-    return manifest.read_text(encoding="utf-8")
+    return json.loads(manifest.read_text(encoding="utf-8"))
 
 
 @app.get("/api/projects/{name}/guide")
@@ -65,7 +79,14 @@ def get_guide(name: str) -> Guide:
 @app.put("/api/projects/{name}/guide")
 def put_guide(name: str, guide: Guide) -> Guide:
     directory = project_dir(name)
-    save_guide(guide, directory / "guide.json")
+    try:
+        for section in guide.sections:
+            for step in section.steps:
+                resolve_frame(directory, step.frame)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    with project_lock(name):
+        save_guide(guide, directory / "guide.json")
     return guide
 
 
@@ -77,28 +98,29 @@ def suggestions(name: str, model_size: str = "base"):
         raise HTTPException(status_code=404, detail="no video.mp4 in project")
     try:
         from videotoguide.transcribe import suggestions_for_steps, transcribe_cached
+
+        segments = transcribe_cached(video, model_size)
     except ImportError:
         raise HTTPException(
             status_code=400,
             detail="transcription extra not installed: uv sync --extra transcribe",
         )
+    except (OSError, RuntimeError, subprocess.SubprocessError) as exc:
+        raise HTTPException(status_code=500, detail=f"Transcription failed: {exc}") from exc
 
-    segments = transcribe_cached(video, model_size)
-    guide_path = directory / "guide.json"
-    guide = load_guide(guide_path) if guide_path.exists() else Guide(title=name)
-    steps = [s for section in guide.sections for s in section.steps]
-    texts = suggestions_for_steps(segments, steps)
-    i = 0
-    for section in guide.sections:
-        for step in section.steps:
-            step.suggestions = [texts[i]] if texts[i] else []
-            i += 1
-    save_guide(guide, guide_path)
+    with project_lock(name):
+        guide_path = directory / "guide.json"
+        guide = load_guide(guide_path) if guide_path.exists() else Guide(title=name)
+        steps = [s for section in guide.sections for s in section.steps]
+        texts = suggestions_for_steps(segments, steps)
+        for step, text in zip(steps, texts):
+            step.suggestions = [text] if text else []
+        save_guide(guide, guide_path)
     return {"segments": len(segments), "guide": guide}
 
 
 class CaptureRequest(BaseModel):
-    timestamp: float
+    timestamp: float = Field(ge=0, allow_inf_nan=False)
 
 
 @app.post("/api/projects/{name}/capture")
@@ -120,21 +142,23 @@ def capture(name: str, body: CaptureRequest):
     if not ok:
         raise HTTPException(status_code=400, detail="cannot seek to timestamp")
 
-    n = 1
-    while (frames_dir / f"captured_{n:04d}.png").exists():
-        n += 1
-    file = f"captured_{n:04d}.png"
-    cv2.imwrite(str(frames_dir / file), img)
+    file = f"captured_{uuid4().hex}.png"
+    if not cv2.imwrite(str(frames_dir / file), img):
+        raise HTTPException(status_code=500, detail="cannot write captured frame")
     return {"file": f"frames/{file}", "timestamp": round(body.timestamp, 3)}
 
 
 @app.post("/api/projects/{name}/export")
 def export(name: str):
     directory = project_dir(name)
-    guide = load_guide(directory / "guide.json")
-    out_dir = EXPORTS / name
-    html_path = export_html(guide, directory, out_dir)
-    pdf_path = export_pdf(html_path, out_dir / "guide.pdf")
+    with project_lock(name):
+        if not (directory / "guide.json").exists():
+            raise HTTPException(status_code=404, detail="save a guide before exporting")
+        try:
+            guide = load_guide(directory / "guide.json")
+            html_path, pdf_path = export_guide(guide, directory, EXPORTS / name)
+        except (OSError, RuntimeError, ValueError, subprocess.SubprocessError) as exc:
+            raise HTTPException(status_code=500, detail=f"Export failed: {exc}") from exc
     return {"html": str(html_path), "pdf": str(pdf_path)}
 
 

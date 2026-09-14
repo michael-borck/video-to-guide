@@ -7,7 +7,7 @@ from pathlib import Path
 import cv2
 import imagehash
 from PIL import Image
-from scenedetect import ContentDetector, detect
+from scenedetect import ContentDetector, FrameTimecode, detect
 
 
 @dataclass
@@ -74,13 +74,10 @@ def extract_frames(
     max_frames: int = 40,
 ) -> ExtractionResult:
     video = Path(video)
+    if max_frames < 1 or samples_per_scene < 1:
+        raise ValueError("max_frames and samples_per_scene must be positive")
     out_dir = Path(out_dir) if out_dir else video.parent / "frames"
     out_dir.mkdir(parents=True, exist_ok=True)
-
-    scenes = detect(
-        str(video),
-        ContentDetector(threshold=scene_threshold, min_scene_len=round(min_scene_len_s * 30)),
-    )
 
     cap = cv2.VideoCapture(str(video))
     if not cap.isOpened():
@@ -91,16 +88,33 @@ def extract_frames(
     duration = cap.get(cv2.CAP_PROP_FRAME_COUNT) / fps
 
     picked: list[tuple[float, int, object, float]] = []
-    for start_fc, end_fc in scenes:
-        result = _best_in_scene(cap, start_fc.frame_num, end_fc.frame_num, samples_per_scene)
-        if result is None:
-            continue
-        frame_no, img, score = result
-        picked.append((frame_no / fps, frame_no, img, score))
-    cap.release()
+    try:
+        scenes = detect(
+            str(video),
+            ContentDetector(
+                threshold=scene_threshold,
+                min_scene_len=max(1, round(min_scene_len_s * fps)),
+            ),
+        )
+        if not scenes:
+            end = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            scenes = [(FrameTimecode(0, fps=fps), FrameTimecode(end, fps=fps))]
+        if len(scenes) > max_frames:
+            # Include both ends and distribute the remaining slots across the video.
+            indices = (
+                [round(i * (len(scenes) - 1) / (max_frames - 1)) for i in range(max_frames)]
+                if max_frames > 1 else [len(scenes) // 2]
+            )
+            scenes = [scenes[i] for i in indices]
+        for start_fc, end_fc in scenes:
+            result = _best_in_scene(cap, start_fc.frame_num, end_fc.frame_num, samples_per_scene)
+            if result is None:
+                continue
+            frame_no, img, score = result
+            picked.append((frame_no / fps, frame_no, img, score))
+    finally:
+        cap.release()
 
-    picked.sort(key=lambda item: item[1], reverse=True)
-    picked = picked[:max_frames]
     picked.sort(key=lambda item: item[0])
 
     candidates: list[FrameCandidate] = []

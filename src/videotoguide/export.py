@@ -5,12 +5,13 @@ import math
 import os
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
-from .model import Annotation, Guide
+from .model import Annotation, Guide, resolve_frame
 
 TEMPLATES = Path(__file__).parent / "templates"
 
@@ -128,7 +129,7 @@ def _find_chrome() -> Path:
     )
 
 
-def export_html(guide: Guide, project_dir: Path, out_dir: Path) -> Path:
+def _render_html(guide: Guide, project_dir: Path, out_dir: Path) -> Path:
     project_dir = Path(project_dir)
     out_dir = Path(out_dir)
     frames_out = out_dir / "frames"
@@ -140,15 +141,16 @@ def export_html(guide: Guide, project_dir: Path, out_dir: Path) -> Path:
         steps = []
         for step in section.steps:
             number += 1
-            src = project_dir / step.frame
+            src = resolve_frame(project_dir, step.frame)
             baked = _flatten(src, step.annotations)
-            baked.save(frames_out / Path(step.frame).name)
+            filename = f"step_{number:04d}.png"
+            baked.save(frames_out / filename)
             steps.append(
                 {
                     "number": number,
                     "width": baked.width,
                     "height": baked.height,
-                    "frame_src": f"frames/{Path(step.frame).name}",
+                    "frame_src": f"frames/{filename}",
                     "instruction_html": _instruction_html(step.instruction),
                 }
             )
@@ -160,6 +162,48 @@ def export_html(guide: Guide, project_dir: Path, out_dir: Path) -> Path:
     out_path = out_dir / "guide.html"
     out_path.write_text(rendered, encoding="utf-8")
     return out_path
+
+
+def _publish_directory(staged: Path, destination: Path) -> None:
+    """Replace the complete export, restoring the previous one if rename fails."""
+    previous = staged.parent / "previous"
+    if destination.exists():
+        destination.rename(previous)
+    try:
+        staged.rename(destination)
+    except OSError:
+        if previous.exists():
+            previous.rename(destination)
+        raise
+
+
+def _export_destination(project_dir: Path, out_dir: Path) -> Path:
+    project = Path(project_dir).resolve()
+    destination = Path(out_dir).resolve()
+    if project.is_relative_to(destination) or destination.is_relative_to(project):
+        raise ValueError("export directory must be separate from the source project")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    return destination
+
+
+def export_html(guide: Guide, project_dir: Path, out_dir: Path) -> Path:
+    out_dir = _export_destination(project_dir, out_dir)
+    with tempfile.TemporaryDirectory(prefix=".vtg-export-", dir=out_dir.parent) as tmp:
+        staged = Path(tmp) / "guide"
+        _render_html(guide, project_dir, staged)
+        _publish_directory(staged, out_dir)
+    return out_dir / "guide.html"
+
+
+def export_guide(guide: Guide, project_dir: Path, out_dir: Path) -> tuple[Path, Path]:
+    """Publish HTML, PDF and images together only after both renders succeed."""
+    out_dir = _export_destination(project_dir, out_dir)
+    with tempfile.TemporaryDirectory(prefix=".vtg-export-", dir=out_dir.parent) as tmp:
+        staged = Path(tmp) / "guide"
+        html_path = _render_html(guide, project_dir, staged)
+        export_pdf(html_path, staged / "guide.pdf")
+        _publish_directory(staged, out_dir)
+    return out_dir / "guide.html", out_dir / "guide.pdf"
 
 
 def export_pdf(html_path: Path, pdf_path: Path, chrome: Path | None = None) -> Path:
@@ -179,6 +223,7 @@ def export_pdf(html_path: Path, pdf_path: Path, chrome: Path | None = None) -> P
         ],
         check=True,
         capture_output=True,
+        timeout=120,
     )
     if not pdf_path.exists():
         raise RuntimeError(f"chrome did not produce {pdf_path}")

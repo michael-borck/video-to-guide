@@ -1,4 +1,5 @@
 import React, { useRef } from "react";
+import { mediaUrl } from "./api.js";
 
 export default function SectionOrganizer({ project, guide, onSave, onAnnotate }) {
   const drag = useRef(null);
@@ -46,7 +47,7 @@ export default function SectionOrganizer({ project, guide, onSave, onAnnotate })
   function addSection() {
     update([
       ...sections,
-      { id: `sec-${sections.length + 1}`, title: "New section", steps: [] },
+      { id: crypto.randomUUID(), title: "New section", steps: [] },
     ]);
   }
 
@@ -110,10 +111,10 @@ export default function SectionOrganizer({ project, guide, onSave, onAnnotate })
               onDragEnd={() => {
                 drag.current = null;
               }}
-              onClick={() => onAnnotate({ sec, idx })}
+              onClick={() => onAnnotate(step.id)}
               title="Click to annotate; drag to reorder"
             >
-              <img src={`/media/${project}/frames/${fileName(step.frame)}`} alt="" />
+              <img src={mediaUrl(project, step.frame)} alt="" />
               <div className="step-body">
                 <div className="step-meta">
                   <span>{step.id}</span>
@@ -142,11 +143,9 @@ export default function SectionOrganizer({ project, guide, onSave, onAnnotate })
                 )}
                 <textarea
                   placeholder="Instruction text…"
-                  defaultValue={step.instruction}
-                  onBlur={(e) =>
-                    e.target.value !== step.instruction &&
-                    patchStep(sec, idx, { instruction: e.target.value })
-                  }
+                  value={step.instruction}
+                  onClick={(e) => e.stopPropagation()}
+                  onChange={(e) => patchStep(sec, idx, { instruction: e.target.value })}
                 />
               </div>
             </article>
@@ -156,8 +155,4 @@ export default function SectionOrganizer({ project, guide, onSave, onAnnotate })
       <button onClick={addSection}>＋ Add section</button>
     </aside>
   );
-}
-
-function fileName(frame) {
-  return frame.split("/").pop();
 }

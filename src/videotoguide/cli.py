@@ -4,7 +4,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from .export import export_html, export_pdf
+from .export import export_guide
 from .extract import extract_frames
 from .model import load_guide
 
@@ -49,8 +49,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "export":
         guide = load_guide(args.project / "guide.json")
         out_dir = args.out or Path("exports") / args.project.name
-        html_path = export_html(guide, args.project, out_dir)
-        pdf_path = export_pdf(html_path, out_dir / "guide.pdf")
+        html_path, pdf_path = export_guide(guide, args.project, out_dir)
         print(f"{html_path}\n{pdf_path}")
         return 0
 
