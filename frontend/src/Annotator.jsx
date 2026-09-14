@@ -8,8 +8,8 @@ const TOOLS = [
   { id: "redact", label: "Redact" },
 ];
 
-export default function Annotator({ project, guide, stepIndex, onSave, onBack }) {
-  const step = guide.sections[0]?.steps[stepIndex];
+export default function Annotator({ project, guide, secIndex, stepIndex, onSave, onBack }) {
+  const step = guide.sections[secIndex]?.steps[stepIndex];
   const canvasRef = useRef(null);
   const imgRef = useRef(null);
   const dragStart = useRef(null);
@@ -116,7 +116,7 @@ export default function Annotator({ project, guide, stepIndex, onSave, onBack })
 
   function updateAnnotations(next) {
     const sections = JSON.parse(JSON.stringify(guide.sections));
-    sections[0].steps[stepIndex].annotations = next;
+    sections[secIndex].steps[stepIndex].annotations = next;
     onSave({ ...guide, sections });
   }
 

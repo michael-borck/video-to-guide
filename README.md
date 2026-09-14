@@ -60,6 +60,20 @@ cd frontend && npm run dev
 
 The Vite dev server proxies `/api`, `/media`, and `/exports` to the backend.
 
+## Suggested text from narration (optional)
+
+```bash
+uv sync --extra transcribe
+```
+
+Then use "Suggest from audio" in the app (or
+`POST /api/projects/<name>/suggestions`). Transcription runs locally via
+[faster-whisper](https://github.com/SYSTRAN/faster-whisper); the model
+downloads on first use and the transcript caches to
+`projects/<name>/transcript.json`. Narration between two frames becomes a
+suggestion on the earlier step — accept it or ignore it. Steps always stay
+human-editable.
+
 ## Status
 
 Early scaffold. Frame extraction and HTML/PDF export work end to end via the

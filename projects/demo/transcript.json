@@ -1,0 +1,17 @@
+[
+  {
+    "start": 0.0,
+    "end": 4.0,
+    "text": "Start from the main panel, the layout is created with draw box filters."
+  },
+  {
+    "start": 6.0,
+    "end": 9.0,
+    "text": "The Outbook area sits on the right and holds the result."
+  },
+  {
+    "start": 12.0,
+    "end": 16.0,
+    "text": "The summary panel lists everything, run the export command to render it."
+  }
+]

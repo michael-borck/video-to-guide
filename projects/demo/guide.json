@@ -11,7 +11,7 @@
           "frame": "frames/frame_0001.png",
           "instruction": "Start from the main panel. The layout is created with `drawbox` filters.",
           "suggestions": [
-            "open a terminal and run npm install"
+            "Start from the main panel, the layout is created with draw box filters."
           ],
           "annotations": [
             {
@@ -43,7 +43,9 @@
           "timestamp": 6.36,
           "frame": "frames/frame_0002.png",
           "instruction": "The output area sits on the right and holds the result.",
-          "suggestions": [],
+          "suggestions": [
+            "The Outbook area sits on the right and holds the result."
+          ],
           "annotations": [
             {
               "type": "box",
@@ -91,7 +93,9 @@
           "timestamp": 12.36,
           "frame": "frames/frame_0003.png",
           "instruction": "The summary panel lists everything. Run `vtg export` to render it.",
-          "suggestions": [],
+          "suggestions": [
+            "The summary panel lists everything, run the export command to render it."
+          ],
           "annotations": [
             {
               "type": "redact",

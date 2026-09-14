@@ -69,6 +69,34 @@ def put_guide(name: str, guide: Guide) -> Guide:
     return guide
 
 
+@app.post("/api/projects/{name}/suggestions")
+def suggestions(name: str, model_size: str = "base"):
+    directory = project_dir(name)
+    video = directory / "video.mp4"
+    if not video.exists():
+        raise HTTPException(status_code=404, detail="no video.mp4 in project")
+    try:
+        from videotoguide.transcribe import suggestions_for_steps, transcribe_cached
+    except ImportError:
+        raise HTTPException(
+            status_code=400,
+            detail="transcription extra not installed: uv sync --extra transcribe",
+        )
+
+    segments = transcribe_cached(video, model_size)
+    guide_path = directory / "guide.json"
+    guide = load_guide(guide_path) if guide_path.exists() else Guide(title=name)
+    steps = [s for section in guide.sections for s in section.steps]
+    texts = suggestions_for_steps(segments, steps)
+    i = 0
+    for section in guide.sections:
+        for step in section.steps:
+            step.suggestions = [texts[i]] if texts[i] else []
+            i += 1
+    save_guide(guide, guide_path)
+    return {"segments": len(segments), "guide": guide}
+
+
 class CaptureRequest(BaseModel):
     timestamp: float
 

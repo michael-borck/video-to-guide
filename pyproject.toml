@@ -17,6 +17,9 @@ dependencies = [
 [project.scripts]
 vtg = "videotoguide.cli:main"
 
+[project.optional-dependencies]
+transcribe = ["faster-whisper>=1.1"]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

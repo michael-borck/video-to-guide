@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import VideoPicker from "./VideoPicker.jsx";
-import StepList from "./StepList.jsx";
+import SectionOrganizer from "./SectionOrganizer.jsx";
 import Annotator from "./Annotator.jsx";
 
 export default function App() {
@@ -11,6 +11,7 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [exportUrl, setExportUrl] = useState("");
   const [annotating, setAnnotating] = useState(null);
+  const [notice, setNotice] = useState("");
 
   useEffect(() => {
     fetch("/api/projects")
@@ -24,6 +25,7 @@ export default function App() {
     setManifest(null);
     setExportUrl("");
     setAnnotating(null);
+    setNotice("");
     fetch(`/api/projects/${project}/guide`)
       .then((r) => r.json())
       .then(setGuide);
@@ -79,6 +81,27 @@ export default function App() {
     await saveGuide({ ...guide, sections });
   }
 
+  async function suggest() {
+    setBusy(true);
+    try {
+      const r = await fetch(`/api/projects/${project}/suggestions`, { method: "POST" });
+      if (r.ok) {
+        const data = await r.json();
+        setGuide(data.guide);
+        setNotice(
+          data.segments === 0
+            ? "No narration found in the video audio."
+            : `${data.segments} transcript segments matched to steps`
+        );
+      } else {
+        const err = await r.json().catch(() => ({}));
+        setNotice(err.detail || "Transcription failed");
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function doExport() {
     setBusy(true);
     try {
@@ -100,20 +123,27 @@ export default function App() {
           ))}
         </select>
         {project && (
-          <button onClick={doExport} disabled={busy}>Export HTML + PDF</button>
+          <>
+            <button onClick={suggest} disabled={busy}>
+              {busy ? "Working…" : "✦ Suggest from audio"}
+            </button>
+            <button onClick={doExport} disabled={busy}>Export HTML + PDF</button>
+          </>
         )}
         {exportUrl && (
           <a href={exportUrl} target="_blank" rel="noreferrer">view guide</a>
         )}
+        {notice && <span className="notice">{notice}</span>}
       </header>
 
       {project && guide && (
         <main>
-          {annotating != null && guide.sections[0]?.steps[annotating] ? (
+          {annotating && guide.sections[annotating.sec]?.steps[annotating.idx] ? (
             <Annotator
               project={project}
               guide={guide}
-              stepIndex={annotating}
+              secIndex={annotating.sec}
+              stepIndex={annotating.idx}
               onSave={saveGuide}
               onBack={() => setAnnotating(null)}
             />
@@ -126,7 +156,7 @@ export default function App() {
               onCapture={capture}
             />
           )}
-          <StepList
+          <SectionOrganizer
             project={project}
             guide={guide}
             onSave={saveGuide}
