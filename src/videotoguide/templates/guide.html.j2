@@ -46,23 +46,6 @@
     border-radius: 6px;
   }
   .frame img { display: block; width: 100%; height: auto; }
-  .ann-box {
-    position: absolute;
-    border: 3px solid var(--accent);
-    border-radius: 4px;
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.7) inset;
-  }
-  .ann-text {
-    position: absolute;
-    background: rgba(255, 255, 255, 0.95);
-    border: 1px solid var(--accent);
-    border-radius: 4px;
-    padding: 2px 8px;
-    font-size: 13px;
-    line-height: 1.3;
-    color: var(--ink);
-    white-space: nowrap;
-  }
   .instruction { margin: 0.75rem 0 0; font-size: 1rem; }
   .instruction code {
     background: #edf2f7;
@@ -93,9 +76,6 @@
       <figure style="margin: 0;">
         <div class="frame" style="aspect-ratio: {{ step.width }} / {{ step.height }};">
           <img src="{{ step.frame_src }}" alt="Step {{ step.number }} screenshot">
-          {% for a in step.overlays %}
-          <div class="{{ a.cls }}" style="{{ a.style }}">{% if a.text %}{{ a.text }}{% endif %}</div>
-          {% endfor %}
         </div>
         <figcaption class="instruction">{{ step.instruction_html }}</figcaption>
       </figure>

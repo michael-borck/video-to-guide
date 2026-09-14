@@ -10,9 +10,32 @@
           "timestamp": 0.36,
           "frame": "frames/frame_0001.png",
           "instruction": "Start from the main panel. The layout is created with `drawbox` filters.",
+          "suggestions": [
+            "open a terminal and run npm install"
+          ],
           "annotations": [
-            { "type": "box", "x": 90, "y": 110, "w": 440, "h": 300 },
-            { "type": "text", "x": 90, "y": 85, "text": "The main panel" }
+            {
+              "type": "box",
+              "x": 90,
+              "y": 110,
+              "w": 440,
+              "h": 300,
+              "text": null,
+              "color": null,
+              "size": null,
+              "mode": null
+            },
+            {
+              "type": "text",
+              "x": 90,
+              "y": 85,
+              "w": null,
+              "h": null,
+              "text": "The main panel",
+              "color": null,
+              "size": null,
+              "mode": null
+            }
           ]
         },
         {
@@ -20,9 +43,41 @@
           "timestamp": 6.36,
           "frame": "frames/frame_0002.png",
           "instruction": "The output area sits on the right and holds the result.",
+          "suggestions": [],
           "annotations": [
-            { "type": "box", "x": 630, "y": 290, "w": 540, "h": 400 },
-            { "type": "text", "x": 630, "y": 265, "text": "Output area" }
+            {
+              "type": "box",
+              "x": 630,
+              "y": 290,
+              "w": 540,
+              "h": 400,
+              "text": null,
+              "color": "#2b6cb0",
+              "size": null,
+              "mode": null
+            },
+            {
+              "type": "arrow",
+              "x": 380,
+              "y": 700,
+              "w": 280,
+              "h": -140,
+              "text": null,
+              "color": "#e53e3e",
+              "size": null,
+              "mode": null
+            },
+            {
+              "type": "text",
+              "x": 630,
+              "y": 265,
+              "w": null,
+              "h": null,
+              "text": "Output area",
+              "color": null,
+              "size": null,
+              "mode": null
+            }
           ]
         }
       ]
@@ -36,9 +91,41 @@
           "timestamp": 12.36,
           "frame": "frames/frame_0003.png",
           "instruction": "The summary panel lists everything. Run `vtg export` to render it.",
+          "suggestions": [],
           "annotations": [
-            { "type": "box", "x": 190, "y": 190, "w": 900, "h": 420 },
-            { "type": "text", "x": 190, "y": 165, "text": "Summary panel" }
+            {
+              "type": "redact",
+              "x": 700,
+              "y": 420,
+              "w": 320,
+              "h": 140,
+              "text": null,
+              "color": null,
+              "size": null,
+              "mode": "pixelate"
+            },
+            {
+              "type": "box",
+              "x": 190,
+              "y": 190,
+              "w": 900,
+              "h": 420,
+              "text": null,
+              "color": null,
+              "size": null,
+              "mode": null
+            },
+            {
+              "type": "text",
+              "x": 190,
+              "y": 165,
+              "w": null,
+              "h": null,
+              "text": "Summary panel",
+              "color": null,
+              "size": null,
+              "mode": null
+            }
           ]
         }
       ]

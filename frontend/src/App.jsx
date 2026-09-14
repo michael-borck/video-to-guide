@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import VideoPicker from "./VideoPicker.jsx";
 import StepList from "./StepList.jsx";
+import Annotator from "./Annotator.jsx";
 
 export default function App() {
   const [projects, setProjects] = useState([]);
@@ -9,6 +10,7 @@ export default function App() {
   const [guide, setGuide] = useState(null);
   const [busy, setBusy] = useState(false);
   const [exportUrl, setExportUrl] = useState("");
+  const [annotating, setAnnotating] = useState(null);
 
   useEffect(() => {
     fetch("/api/projects")
@@ -21,6 +23,7 @@ export default function App() {
     if (!project) return;
     setManifest(null);
     setExportUrl("");
+    setAnnotating(null);
     fetch(`/api/projects/${project}/guide`)
       .then((r) => r.json())
       .then(setGuide);
@@ -106,14 +109,29 @@ export default function App() {
 
       {project && guide && (
         <main>
-          <VideoPicker
+          {annotating != null && guide.sections[0]?.steps[annotating] ? (
+            <Annotator
+              project={project}
+              guide={guide}
+              stepIndex={annotating}
+              onSave={saveGuide}
+              onBack={() => setAnnotating(null)}
+            />
+          ) : (
+            <VideoPicker
+              project={project}
+              manifest={manifest}
+              busy={busy}
+              onExtract={extractFrames}
+              onCapture={capture}
+            />
+          )}
+          <StepList
             project={project}
-            manifest={manifest}
-            busy={busy}
-            onExtract={extractFrames}
-            onCapture={capture}
+            guide={guide}
+            onSave={saveGuide}
+            onAnnotate={setAnnotating}
           />
-          <StepList project={project} guide={guide} onSave={saveGuide} />
         </main>
       )}
     </div>

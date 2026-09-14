@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function StepList({ project, guide, onSave }) {
+export default function StepList({ project, guide, onSave, onAnnotate }) {
   const steps = guide.sections[0]?.steps ?? [];
 
   function update(stepIndex, patch) {
@@ -20,13 +20,25 @@ export default function StepList({ project, guide, onSave }) {
       <h2>Steps ({steps.length})</h2>
       {steps.length === 0 && <p className="hint">Capture frames to build the guide.</p>}
       {steps.map((step, i) => (
-        <article key={step.id} className="step-card">
+        <article
+          key={step.id}
+          className="step-card"
+          onClick={() => onAnnotate(i)}
+          title="Click to annotate"
+        >
           <img src={`/media/${project}/frames/${fileName(step.frame)}`} alt="" />
           <div className="step-body">
             <div className="step-meta">
               <span>{step.id}</span>
               <span>{step.timestamp.toFixed(1)}s</span>
-              <button onClick={() => remove(i)}>remove</button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  remove(i);
+                }}
+              >
+                remove
+              </button>
             </div>
             <textarea
               placeholder="Instruction text…"

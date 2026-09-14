@@ -1,15 +1,16 @@
 from __future__ import annotations
 
 import html
+import math
 import os
 import shutil
 import subprocess
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
-from .model import Guide
+from .model import Annotation, Guide
 
 TEMPLATES = Path(__file__).parent / "templates"
 
@@ -17,6 +18,12 @@ CHROME_CANDIDATES = [
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     "/Applications/Chromium.app/Contents/MacOS/Chromium",
     "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+]
+
+FONT_CANDIDATES = [
+    "/System/Library/Fonts/Supplemental/Arial.ttf",
+    "C:/Windows/Fonts/arial.ttf",
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
 ]
 
 
@@ -27,16 +34,84 @@ def _instruction_html(text: str) -> str:
     return "".join(parts)
 
 
-def _overlay_style(a, width: int, height: int) -> str:
-    def pct(value: int, total: int) -> str:
-        return f"{value / total * 100:.3f}%"
+def _load_font(size: int):
+    for candidate in FONT_CANDIDATES:
+        if Path(candidate).exists():
+            return ImageFont.truetype(candidate, size)
+    return ImageFont.load_default()
 
-    if a.type == "box":
-        return (
-            f"left:{pct(a.x, width)};top:{pct(a.y, height)};"
-            f"width:{pct(a.w, width)};height:{pct(a.h, height)};"
-        )
-    return f"left:{pct(a.x, width)};top:{pct(a.y, height)};"
+
+def _line_width(img: Image.Image) -> int:
+    return max(3, img.height // 250)
+
+
+def _default_text_size(img: Image.Image) -> int:
+    return max(16, img.height // 30)
+
+
+def _apply_redact(img: Image.Image, a: Annotation) -> None:
+    x, y, w, h = a.x, a.y, a.w or 0, a.h or 0
+    if w <= 0 or h <= 0:
+        return
+    if a.mode == "solid":
+        ImageDraw.Draw(img).rectangle([x, y, x + w, y + h], fill=(17, 17, 17))
+        return
+    region = img.crop((x, y, x + w, y + h))
+    if a.mode == "pixelate":
+        block = max(12, min(w, h) // 10)
+        small = region.resize((max(1, w // block), max(1, h // block)), Image.NEAREST)
+        region = small.resize((w, h), Image.NEAREST)
+    else:
+        region = region.filter(ImageFilter.GaussianBlur(16))
+    img.paste(region, (x, y))
+
+
+def _draw_arrow(draw: ImageDraw.ImageDraw, a: Annotation, lw: int) -> None:
+    color = a.color or "#e53e3e"
+    ex, ey = a.x + (a.w or 0), a.y + (a.h or 0)
+    draw.line([a.x, a.y, ex, ey], fill=color, width=lw)
+    head = max(lw * 4, 14)
+    angle = math.atan2(ey - a.y, ex - a.x)
+    spread = math.radians(155)
+    p1 = (ex + head * math.cos(angle + spread), ey + head * math.sin(angle + spread))
+    p2 = (ex + head * math.cos(angle - spread), ey + head * math.sin(angle - spread))
+    draw.polygon([(ex, ey), p1, p2], fill=color)
+
+
+def _draw_text(draw: ImageDraw.ImageDraw, a: Annotation) -> None:
+    size = a.size or 24
+    font = _load_font(size)
+    text = a.text or ""
+    left, top, right, bottom = draw.textbbox((a.x, a.y), text, font=font)
+    pad = size // 5
+    draw.rectangle(
+        [left - pad, top - pad // 2, right + pad, bottom + pad // 2],
+        fill=(255, 255, 255, 235),
+        outline=(203, 213, 224),
+    )
+    draw.text((a.x, a.y), text, fill=a.color or "#1a202c", font=font)
+
+
+def _flatten(src: Path, annotations: list[Annotation]) -> Image.Image:
+    img = Image.open(src).convert("RGB")
+    for a in annotations:
+        if a.type == "redact":
+            _apply_redact(img, a)
+
+    draw = ImageDraw.Draw(img)
+    lw = _line_width(img)
+    for a in annotations:
+        if a.type == "box":
+            draw.rectangle(
+                [a.x, a.y, a.x + (a.w or 0), a.y + (a.h or 0)],
+                outline=a.color or "#e53e3e",
+                width=lw,
+            )
+        elif a.type == "arrow":
+            _draw_arrow(draw, a, lw)
+        elif a.type == "text":
+            _draw_text(draw, a)
+    return img
 
 
 def _find_chrome() -> Path:
@@ -66,24 +141,15 @@ def export_html(guide: Guide, project_dir: Path, out_dir: Path) -> Path:
         for step in section.steps:
             number += 1
             src = project_dir / step.frame
-            shutil.copy(src, frames_out / Path(step.frame).name)
-            with Image.open(src) as img:
-                width, height = img.size
+            baked = _flatten(src, step.annotations)
+            baked.save(frames_out / Path(step.frame).name)
             steps.append(
                 {
                     "number": number,
-                    "width": width,
-                    "height": height,
+                    "width": baked.width,
+                    "height": baked.height,
                     "frame_src": f"frames/{Path(step.frame).name}",
                     "instruction_html": _instruction_html(step.instruction),
-                    "overlays": [
-                        {
-                            "cls": f"ann-{'box' if a.type == 'box' else 'text'}",
-                            "style": _overlay_style(a, width, height),
-                            "text": html.escape(a.text) if a.text else None,
-                        }
-                        for a in step.annotations
-                    ],
                 }
             )
         sections.append({"title": html.escape(section.title), "steps": steps})

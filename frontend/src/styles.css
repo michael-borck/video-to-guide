@@ -153,3 +153,106 @@ main {
   resize: vertical;
   min-height: 2.4rem;
 }
+
+.step-card {
+  cursor: pointer;
+}
+
+.annotator-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.6rem;
+}
+
+.annotator-bar .step-badge {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #4a5568;
+  padding: 0 0.4rem;
+}
+
+.annotator-bar button.active {
+  border-color: #2b6cb0;
+  color: #2b6cb0;
+  font-weight: 600;
+}
+
+.palette {
+  display: inline-flex;
+  gap: 0.25rem;
+  margin-left: 0.3rem;
+}
+
+.swatch {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px #cbd5e0;
+}
+
+.swatch.active {
+  box-shadow: 0 0 0 2px #2b6cb0;
+}
+
+.canvas-wrap {
+  position: relative;
+}
+
+.canvas-wrap canvas {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #cbd5e0;
+  display: block;
+  cursor: crosshair;
+}
+
+.text-input {
+  position: absolute;
+  transform: translateY(-50%);
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.2rem 0.4rem;
+  border: 1px dashed #2b6cb0;
+  border-radius: 4px;
+  min-width: 160px;
+}
+
+.ann-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid #718096;
+  border-radius: 4px;
+  padding: 0.15rem 0.4rem;
+}
+
+.chip button {
+  padding: 0 0.25rem;
+  font-size: 0.7rem;
+  border: none;
+  background: none;
+  color: #718096;
+  cursor: pointer;
+}
+
+.chip button:hover {
+  color: #e53e3e;
+}
+
+.annotator .hint {
+  font-size: 0.75rem;
+}

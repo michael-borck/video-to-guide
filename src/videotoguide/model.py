@@ -7,12 +7,15 @@ from pydantic import BaseModel, Field
 
 
 class Annotation(BaseModel):
-    type: Literal["box", "text"]
+    type: Literal["box", "text", "arrow", "redact"]
     x: int
     y: int
     w: int | None = None
     h: int | None = None
     text: str | None = None
+    color: str | None = None
+    size: int | None = None
+    mode: Literal["solid", "pixelate", "blur"] | None = None
 
 
 class Step(BaseModel):
@@ -20,6 +23,7 @@ class Step(BaseModel):
     timestamp: float
     frame: str
     instruction: str = ""
+    suggestions: list[str] = Field(default_factory=list)
     annotations: list[Annotation] = Field(default_factory=list)
 
 
