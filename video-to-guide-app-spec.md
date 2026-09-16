@@ -273,3 +273,44 @@ brand — easier to search for, less likely to collide with unrelated
 projects, and clearer at a glance what the tool does. Decide this once the
 build-vs-fork decision above is settled, since forking an existing project
 may mean inheriting (or deliberately renaming from) its existing name.
+
+---
+
+## 12. Future work: `guide-analyser` (lens family integration)
+
+Sketched 2026-09-16 after cross-pollinating with the lens family
+(`~/Projects/lens/`). Idea: once the `guide.json` model has stabilised with
+real use, extract a thin **`guide-analyser`** family member so a finished
+guide becomes a *submittable, assessable artifact*.
+
+**Division of roles** (mirrors the family's product-vs-analyser rule — see
+`assessment-rename-and-ux-plan.md` §1):
+
+- **vtg stays an independent product** — human-in-the-loop guide *authoring*.
+  No lens dependency beyond the (already optional) `speech-analyser`
+  transcribe extra swapped in 2026-09.
+- **A guide = the artifact**: `guide.json` + `frames/` (what a student hands
+  in). **`guide-analyser` analyses the artifact, not vtg** — its only
+  dependency is the `guide.json` schema this spec defines (§4). A guide
+  authored by hand or by another tool is indistinguishable to it.
+- The source video, if also submitted, is video-analyser's business; a rubric
+  can pin `video.*` and `guide.*` signals side by side.
+
+**Candidate signals** (assessment-agnostic, neutrally framed):
+`guide.step_count`, `guide.section_count`, `guide.instruction_coverage`
+(fraction of steps with non-empty text), `guide.step_duration_pacing` (narration
+seconds per step, from word timestamps), `guide.ui_text_vs_narration` (OCR of
+step frames vs transcript overlap), `guide.frame_novelty` (near-duplicate
+frames across steps).
+
+**Contract shape**: manifest claims a `.guide` container extension
+(e.g. `alice.guide.zip` = zipped bundle) so **auto-routing just works** —
+avoid a special "folder containing guide.json" rule in bundle-analyser.
+Explicit-only is the fallback, but extension-routable is cleaner.
+`<command> <file> --json` → signals dict; assessment-lens pins `guide.*` in
+`signals_of_interest`; desktop apps need one added line in `sidecarPipSpecs`.
+
+**Exit criteria to start**: `guide.json` schema stable across a real
+semester's use; then scaffold `guide-analyser` as its own repo depending only
+on pydantic + the frozen schema (invert the dependency: the analyser must not
+import vtg).
