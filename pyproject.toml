@@ -18,7 +18,9 @@ dependencies = [
 vtg = "videotoguide.cli:main"
 
 [project.optional-dependencies]
-transcribe = ["faster-whisper>=1.1"]
+# Transcription is delegated to the lens family's audio member (word timestamps,
+# language detection) instead of wrapping faster-whisper directly.
+transcribe = ["speech-analyser>=0.7"]
 
 [dependency-groups]
 dev = ["httpx>=0.28"]
