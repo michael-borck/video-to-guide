@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 from functools import lru_cache
 from pathlib import Path
@@ -16,7 +17,9 @@ from videotoguide.extract import extract_frames
 from videotoguide.export import export_guide
 from videotoguide.model import Guide, load_guide, resolve_frame, save_guide
 
-ROOT = Path(__file__).resolve().parents[1]
+# Defaults keep the source-checkout layout; the packaged desktop app sets
+# VTG_ROOT (user data dir) and VTG_DIST (frontend assets inside the bundle).
+ROOT = Path(os.environ.get("VTG_ROOT", Path(__file__).resolve().parents[1]))
 PROJECTS = ROOT / "projects"
 EXPORTS = ROOT / "exports"
 
@@ -166,6 +169,6 @@ app.mount("/media", StaticFiles(directory=PROJECTS), name="media")
 EXPORTS.mkdir(exist_ok=True)
 app.mount("/exports", StaticFiles(directory=EXPORTS, html=True), name="exports")
 
-DIST = ROOT / "frontend" / "dist"
+DIST = Path(os.environ.get("VTG_DIST", ROOT / "frontend" / "dist"))
 if DIST.is_dir():
     app.mount("/", StaticFiles(directory=DIST, html=True), name="spa")

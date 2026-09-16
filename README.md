@@ -3,7 +3,9 @@
 Turn a screen recording into a step-by-step guide: extract candidate frames,
 pick & annotate in a web UI, group into sections, export as HTML and PDF.
 
-Working name — will be renamed before any PyPI publish. Spec:
+On PyPI as [`videotoguide`](https://pypi.org/project/videotoguide/).
+Desktop installers and screenshots: the
+[project page](https://michael-borck.github.io/video-to-guide/). Spec:
 `video-to-guide-app-spec.md`.
 
 ## Layout
@@ -107,6 +109,33 @@ The tests cover project switching, save ordering and retry, capture readiness,
 suggestion acceptance, frame selection, path validation, redaction isolation,
 and export replacement. PDF failure tests mock Chrome; actual PDF export still
 requires an installed Chromium browser.
+
+## Desktop app (Tauri)
+
+The desktop app is a Tauri shell that spawns the FastAPI server, built by
+PyInstaller into a self-contained sidecar, on a free localhost port and points
+the webview at it. Projects and exports live in the user's application-data
+directory (`~/Library/Application Support/video-to-guide` on macOS).
+
+Releases are built by [.github/workflows/release.yml](.github/workflows/release.yml)
+on tag push (`v*`): it re-runs the tests, builds the frontend, builds the
+sidecar for the runner platform, then `tauri-action` uploads installers to a
+draft release, published as "Latest" once every platform succeeds. The landing
+page under `docs/` (served by GitHub Pages) detects the visitor's platform and
+links the matching installer.
+
+Build it locally (macOS/Linux, Windows similar):
+
+```bash
+npm --prefix frontend run build
+uv sync --group package
+uv run pyinstaller --noconfirm vtg-server.spec
+mkdir -p src-tauri/sidecar && cp -r dist/vtg-server src-tauri/sidecar/
+cargo tauri build   # or: cargo run from src-tauri for a debug shell
+```
+
+Regenerate app icons after changing the drawing in
+`scripts/generate_icons.py`.
 
 ## Status
 

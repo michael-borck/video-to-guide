@@ -1,0 +1,16 @@
+[package]
+name = "video-to-guide"
+version = "0.1.0"
+description = "Turn screen recordings into step-by-step guides"
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1

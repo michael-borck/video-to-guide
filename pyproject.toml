@@ -25,6 +25,7 @@ transcribe = ["speech-analyser>=0.7"]
 
 [dependency-groups]
 dev = ["httpx>=0.28"]
+package = ["pyinstaller>=6.10"]
 
 [build-system]
 requires = ["hatchling"]

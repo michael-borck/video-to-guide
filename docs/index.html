@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>video-to-guide — turn screen recordings into step-by-step guides</title>
+    <meta
+      name="description"
+      content="video-to-guide is a local-first desktop app that turns a screen recording into a step-by-step guide. It proposes frames from scene detection, you pick, annotate, and organise, then export polished HTML and PDF. Nothing leaves your machine."
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <nav class="topnav">
+      <div class="container topnav-inner">
+        <span class="brand">video<span class="brand-accent">-to-</span>guide</span>
+        <div class="topnav-links">
+          <a href="https://github.com/michael-borck/video-to-guide">GitHub</a>
+          <a href="https://github.com/michael-borck/video-to-guide/releases">Releases</a>
+          <a href="https://pypi.org/project/videotoguide/">PyPI</a>
+          <a href="#download" class="nav-cta">Download</a>
+        </div>
+      </div>
+    </nav>
+
+    <header class="hero" id="top">
+      <div class="container hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow">Screen recording in. Written guide out.</p>
+          <h1>Record once. <em>Skip the write-up.</em></h1>
+          <p class="sub">
+            Drop a screen recording into a project, and video-to-guide finds the moments worth
+            keeping. Pick and annotate frames, group them into sections, and export a guide as HTML
+            and PDF. Everything runs on your machine.
+          </p>
+
+          <div class="download-block" id="download">
+            <a
+              id="download-btn"
+              class="btn btn-primary"
+              href="https://github.com/michael-borck/video-to-guide/releases/latest"
+              >Download</a
+            >
+            <div class="platform-toggle" role="group" aria-label="Choose platform">
+              <button data-platform="mac" class="platform-btn">macOS</button>
+              <button data-platform="windows" class="platform-btn">Windows</button>
+              <button data-platform="linux" class="platform-btn">Linux</button>
+            </div>
+            <p class="version">
+              <span id="version">&nbsp;</span>
+              <a id="alt-arch" class="alt-arch" href="#" hidden></a>
+            </p>
+            <p class="gatekeeper-note" id="gatekeeper-note" hidden>
+              Unsigned build: on macOS, right-click the app and choose Open the first time.
+            </p>
+            <p class="all-releases">
+              <a href="https://github.com/michael-borck/video-to-guide/releases"
+                >All releases &amp; older versions →</a
+              >
+            </p>
+          </div>
+
+          <p class="privacy-tag">Local-first. Your video, frames, and notes never leave this device.</p>
+        </div>
+
+        <div class="hero-shots">
+          <!-- Screenshots auto-discovered from screenshots/video-to-guide-1.png, -2.png, -3.png…
+               Drop a numbered PNG into docs/screenshots/ and it joins the rotation. -->
+          <div class="carousel" id="carousel" aria-label="App screenshots">
+            <div class="carousel-placeholder">
+              <span>annotate frames → organise sections → export</span>
+            </div>
+          </div>
+          <div class="carousel-dots" id="carousel-dots"></div>
+        </div>
+      </div>
+    </header>
+
+    <section class="container steps">
+      <h2>How it works</h2>
+      <div class="grid four">
+        <div class="card">
+          <div class="card-num">1 · Record</div>
+          <h3>Show the task</h3>
+          <p>
+            Make a plain screen recording, the kind you would send a colleague. Drop it in a project
+            folder as video.mp4. No script, no rehearsal.
+          </p>
+        </div>
+        <div class="card">
+          <div class="card-num">2 · Capture</div>
+          <h3>Pick the frames</h3>
+          <p>
+            Scene detection proposes sharp, distinct frames. Scrub the timeline and capture your own
+            when you want something else. Redact anything private before it ships.
+          </p>
+        </div>
+        <div class="card">
+          <div class="card-num">3 · Organise</div>
+          <h3>Write the steps</h3>
+          <p>
+            Group frames into sections and caption each step. Record narration and the app will
+            suggest text from it, using local transcription. You always have the last word.
+          </p>
+        </div>
+        <div class="card">
+          <div class="card-num">4 · Export</div>
+          <h3>Share the guide</h3>
+          <p>
+            One click produces a styled HTML page and a PDF, images included. Each export replaces
+            the last, so removed steps never haunt the output.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="providers-band">
+      <div class="container">
+        <h2>Good to know</h2>
+        <div class="grid three">
+          <div class="card plain">
+            <h3>PDF needs a browser</h3>
+            <p>
+              PDF export renders through a local headless Chrome. Google Chrome, Chromium, or Edge
+              installed on your machine is all it takes. HTML export has no requirements.
+            </p>
+          </div>
+          <div class="card plain">
+            <h3>Transcription is optional</h3>
+            <p>
+              Suggestions from narration use faster-whisper running locally. The model downloads the
+              first time you use it; skip the feature entirely and nothing extra installs.
+            </p>
+          </div>
+          <div class="card plain">
+            <h3>Open source</h3>
+            <p>
+              MIT licensed, and the Python package is on PyPI. Prefer terminals? The same pipeline
+              runs from source with a few commands.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="container source">
+      <div class="source-grid">
+        <div>
+          <h2>Run it from source</h2>
+          <p>
+            No installer required. You need Python 3.12+, <a
+              href="https://docs.astral.sh/uv/"
+              >uv</a
+            >, and Node.js for the frontend build.
+          </p>
+        </div>
+        <pre><code>git clone https://github.com/michael-borck/video-to-guide
+cd video-to-guide
+uv sync
+cd frontend &amp;&amp; npm install &amp;&amp; npm run build &amp;&amp; cd ..
+uv run uvicorn backend.main:app</code></pre>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="container footer-inner">
+        <a href="https://github.com/michael-borck/video-to-guide">GitHub</a>
+        <a href="https://github.com/michael-borck/video-to-guide/releases">Releases</a>
+        <a href="https://pypi.org/project/videotoguide/">PyPI</a>
+        <span class="copyright">MIT © Michael Borck</span>
+      </div>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+</html>

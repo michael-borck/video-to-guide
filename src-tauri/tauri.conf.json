@@ -1,0 +1,31 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "video-to-guide",
+  "version": "0.1.0",
+  "identifier": "app.videotoguide.desktop",
+  "build": {
+    "frontendDist": "../frontend/dist"
+  },
+  "app": {
+    "windows": [],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "category": "Productivity",
+    "shortDescription": "Turn screen recordings into step-by-step guides",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "resources": {
+      "sidecar/vtg-server/": "vtg-server/"
+    }
+  }
+}
