@@ -89,9 +89,14 @@ jobs:
           set -e
           while IFS= read -r -d '' framework; do
             name="$(basename "$framework" .framework)"
-            # PyInstaller can materialize root Resources/Python as real copies,
-            # which makes codesign treat the bundle as ambiguous. Restore the
-            # standard framework symlinks.
+            # PyInstaller can materialize root Resources/Python and
+            # Versions/Current as real copies, which makes codesign treat the
+            # bundle as ambiguous. Restore the standard framework symlinks.
+            version="$(ls -1 "$framework/Versions" | grep -E '^[0-9]' | head -1)"
+            if [ -n "$version" ] && [ -d "$framework/Versions/Current" ] && [ ! -L "$framework/Versions/Current" ]; then
+              rm -rf "$framework/Versions/Current"
+              ln -s "$version" "$framework/Versions/Current"
+            fi
             if [ -d "$framework/Resources" ] && [ ! -L "$framework/Resources" ]; then
               rm -rf "$framework/Resources"
               ln -s Versions/Current/Resources "$framework/Resources"
