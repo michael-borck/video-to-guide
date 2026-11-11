@@ -125,19 +125,18 @@ jobs:
           done < <(find src-tauri/sidecar/vtg-server -type f -print0)
 
           while IFS= read -r -d '' framework; do
-            # Signing the framework directory itself is ambiguous in PyInstaller's
-            # layout ("could be app or framework"). Sign its executable as a
-            # plain Mach-O via a temporary path, then put it back.
-            exe="$framework/Versions/Current/$(basename "$framework" .framework)"
-            [ -f "$exe" ] || exe="$framework/$(basename "$framework" .framework)"
-            if [ -f "$exe" ]; then
-              tmp="$(mktemp)"
-              cp "$exe" "$tmp"
-              codesign --force --options runtime --timestamp --sign "$IDENTITY" "$tmp"
-              cp "$tmp" "$exe"
-              rm -f "$tmp"
-              count=$((count + 1))
+            echo "Framework: $framework"
+            find "$framework" -maxdepth 3 -print
+            if codesign --force --options runtime --timestamp --sign "$IDENTITY" "$framework"; then
+              echo "Signed framework bundle: $framework"
+            else
+              # Some PyInstaller/Python framework layouts make the top-level
+              # bundle ambiguous to codesign. Signing the versioned bundle is
+              # the documented fallback for frameworks.
+              echo "Framework root ambiguous; signing versioned bundle"
+              codesign --force --options runtime --timestamp --sign "$IDENTITY" "$framework/Versions/Current"
             fi
+            count=$((count + 1))
           done < <(find src-tauri/sidecar/vtg-server -type d -name '*.framework' -print0)
           echo "Signed $count Mach-O files/frameworks in the sidecar"
 
