@@ -82,6 +82,26 @@ jobs:
           mkdir -p src-tauri/sidecar
           cp -r dist/vtg-server src-tauri/sidecar/vtg-server
 
+      - name: Normalize Python.framework layout
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -e
+          while IFS= read -r -d '' framework; do
+            name="$(basename "$framework" .framework)"
+            # PyInstaller can materialize root Resources/Python as real copies,
+            # which makes codesign treat the bundle as ambiguous. Restore the
+            # standard framework symlinks.
+            if [ -d "$framework/Resources" ] && [ ! -L "$framework/Resources" ]; then
+              rm -rf "$framework/Resources"
+              ln -s Versions/Current/Resources "$framework/Resources"
+            fi
+            if [ -f "$framework/$name" ] && [ ! -L "$framework/$name" ]; then
+              rm -f "$framework/$name"
+              ln -s "Versions/Current/$name" "$framework/$name"
+            fi
+          done < <(find src-tauri/sidecar/vtg-server -type d -name '*.framework' -print0)
+
       - name: Import macOS signing certificate
         if: runner.os == 'macOS'
         env:
