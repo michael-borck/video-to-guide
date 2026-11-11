@@ -125,7 +125,7 @@ jobs:
           done < <(find src-tauri/sidecar/vtg-server -type f -print0)
 
           while IFS= read -r -d '' framework; do
-            codesign --force --deep --options runtime --timestamp --sign "$IDENTITY" "$framework"
+            codesign --force --options runtime --timestamp --sign "$IDENTITY" "$framework"
             count=$((count + 1))
           done < <(find src-tauri/sidecar/vtg-server -type d -name '*.framework' -print0)
           echo "Signed $count Mach-O files/frameworks in the sidecar"
