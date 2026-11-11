@@ -112,12 +112,23 @@ jobs:
           echo "Signing sidecar with: $IDENTITY"
           count=0
           while IFS= read -r -d '' file; do
+            # Framework binaries must be signed as part of their .framework
+            # bundle; signing the inner Mach-O directly gives "bundle format
+            # is ambiguous".
+            case "$file" in
+              *.framework/*) continue ;;
+            esac
             if file "$file" | grep -q 'Mach-O'; then
               codesign --force --options runtime --timestamp --sign "$IDENTITY" "$file"
               count=$((count + 1))
             fi
           done < <(find src-tauri/sidecar/vtg-server -type f -print0)
-          echo "Signed $count Mach-O binaries in the sidecar"
+
+          while IFS= read -r -d '' framework; do
+            codesign --force --deep --options runtime --timestamp --sign "$IDENTITY" "$framework"
+            count=$((count + 1))
+          done < <(find src-tauri/sidecar/vtg-server -type d -name '*.framework' -print0)
+          echo "Signed $count Mach-O files/frameworks in the sidecar"
 
       - name: Sync tauri.conf.json version with tag
         if: startsWith(github.ref, 'refs/tags/')
