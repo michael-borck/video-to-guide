@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -20,7 +21,7 @@ jobs:
         include:
           - os: macos-latest
             triple: aarch64-apple-darwin
-          - os: macos-13
+          - os: macos-15-intel
             triple: x86_64-apple-darwin
           - os: ubuntu-22.04
             triple: x86_64-unknown-linux-gnu
@@ -78,6 +79,7 @@ jobs:
           cp -r dist/vtg-server src-tauri/sidecar/vtg-server
 
       - name: Sync tauri.conf.json version with tag
+        if: startsWith(github.ref, 'refs/tags/')
         shell: bash
         run: |
           TAG="${GITHUB_REF_NAME#v}"
@@ -91,13 +93,33 @@ jobs:
           print(f"tauri version -> {sys.argv[1]}")
           EOF
 
+      - name: Prepare App Store Connect API key
+        if: runner.os == 'macOS'
+        env:
+          APPLE_API_KEY_CONTENT: ${{ secrets.APPLE_API_KEY_CONTENT }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+        run: |
+          if [ -n "$APPLE_API_KEY_CONTENT" ] && [ -n "$APPLE_API_KEY" ]; then
+            mkdir -p ~/.appstoreconnect/private_keys
+            printf '%s' "$APPLE_API_KEY_CONTENT" | openssl base64 -d -A > ~/.appstoreconnect/private_keys/AuthKey_${APPLE_API_KEY}.p8
+            chmod 600 ~/.appstoreconnect/private_keys/AuthKey_${APPLE_API_KEY}.p8
+          else
+            echo "No API key secrets; notarization will fall back to Apple ID"
+          fi
+
       - name: Build Tauri app and upload to release draft
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
-          tagName: v__VERSION__
-          releaseName: 'video-to-guide v__VERSION__'
+          tagName: ${{ startsWith(github.ref, 'refs/tags/') && 'v__VERSION__' || '' }}
+          releaseName: ${{ startsWith(github.ref, 'refs/tags/') && 'video-to-guide v__VERSION__' || '' }}
           releaseBody: 'Download the installer for your platform. PDF export needs Google Chrome (or Chromium/Edge) installed.'
           releaseDraft: true
           prerelease: false
@@ -120,6 +142,7 @@ jobs:
     # Promote the draft release to published "Latest" only after every
     # matrix build has succeeded, so a partial release never ships.
     needs: build
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
       - name: Publish release
