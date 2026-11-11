@@ -125,8 +125,19 @@ jobs:
           done < <(find src-tauri/sidecar/vtg-server -type f -print0)
 
           while IFS= read -r -d '' framework; do
-            codesign --force --options runtime --timestamp --sign "$IDENTITY" "$framework"
-            count=$((count + 1))
+            # Signing the framework directory itself is ambiguous in PyInstaller's
+            # layout ("could be app or framework"). Sign its executable as a
+            # plain Mach-O via a temporary path, then put it back.
+            exe="$framework/Versions/Current/$(basename "$framework" .framework)"
+            [ -f "$exe" ] || exe="$framework/$(basename "$framework" .framework)"
+            if [ -f "$exe" ]; then
+              tmp="$(mktemp)"
+              cp "$exe" "$tmp"
+              codesign --force --options runtime --timestamp --sign "$IDENTITY" "$tmp"
+              cp "$tmp" "$exe"
+              rm -f "$tmp"
+              count=$((count + 1))
+            fi
           done < <(find src-tauri/sidecar/vtg-server -type d -name '*.framework' -print0)
           echo "Signed $count Mach-O files/frameworks in the sidecar"
 
