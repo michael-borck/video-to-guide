@@ -12,6 +12,11 @@ permissions:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
+    env:
+      # Use uv's standalone CPython, which ships libpython as a dylib. The
+      # runner's Homebrew Python ships a Python.framework that Tauri's resource
+      # copy dereferences, invalidating the framework's code signature.
+      UV_PYTHON_PREFERENCE: only-managed
 
     strategy:
       # Don't cancel sibling platform builds if one fails — debugging is
